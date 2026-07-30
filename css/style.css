@@ -75,14 +75,17 @@ html, body {
 #canvas-container {
   position: relative;
   width: 100%;
-  max-width: none; /* Remove max-width constraint on mobile */
-  height: 100vh; /* Full viewport height */
+  max-width: none;
+  height: 100vh;                              /* fallback: old browsers */
+  height: 100dvh;                              /* preferred: native, auto-adjusts to address bar */
+  height: calc(var(--app-height, 100dvh));     /* JS override, only kicks in if dvh unsupported */
   max-height: 100vh;
+  max-height: 100dvh;
+  max-height: calc(var(--app-height, 100dvh));
   overflow: hidden;
   background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 100%);
-  border-radius: 0; /* No rounded corners on mobile */
+  border-radius: 0;
 }
-
 /* Canvas */
 #game-canvas {
   display: block;

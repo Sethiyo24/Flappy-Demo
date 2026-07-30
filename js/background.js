@@ -4,15 +4,16 @@
  */
 
 export class Background {
-  constructor(gameWidth, gameHeight, groundHeight = 10) {
-    this.w = gameWidth;
-    this.h = gameHeight;
-    this.groundHeight = groundHeight;
-    this.layers = [];
-    this.clouds = [];
-    this.initClouds();
-    this.initLayers();
-  }
+constructor(gameWidth, gameHeight, groundHeight = 10) {
+  this.w = gameWidth;
+  this.h = gameHeight;
+  this.groundHeight = groundHeight;
+  this.isMobile = false; // ADD THIS LINE
+  this.layers = [];
+  this.clouds = [];
+  this.initClouds();
+  this.initLayers();
+}
 
   initClouds() {
     // Generate random clouds once, they persist
@@ -95,68 +96,75 @@ export class Background {
   }
 
   drawHills(ctx, w, h, off) {
-    ctx.save();
-    ctx.fillStyle = '#81C784';
-    ctx.globalAlpha = 0.6;
-    
-    ctx.beginPath();
-    ctx.moveTo(off, h);
-    // Use consistent points based on width — no random jitter
-    const points = [
-      { x: 0, y: h - 80 },
-      { x: w * 0.33, y: h - 40 },
-      { x: w * 0.66, y: h - 100 },
-      { x: w, y: h - 60 },
-      { x: w * 1.33, y: h - 90 },
-      { x: w * 1.66, y: h - 50 }
-    ];
-    
-    ctx.moveTo(off, h);
-    for (let i = 0; i < points.length; i++) {
-      const p = points[i];
-      const nextP = points[(i + 1) % points.length];
-      const cpX = (p.x + nextP.x) / 2;
-      ctx.quadraticCurveTo(off + p.x, p.y, off + (p.x + nextP.x) / 2, (p.y + nextP.y) / 2);
-    }
-    ctx.lineTo(off + w * 2, h);
-    ctx.closePath();
-    ctx.fill();
+  ctx.save();
+  ctx.fillStyle = '#81C784';
+  ctx.globalAlpha = 0.6;
 
-    // Second hill layer
-    ctx.fillStyle = '#66BB6A';
-    ctx.globalAlpha = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(off, h);
-    const points2 = [
-      { x: 0, y: h - 60 },
-      { x: w * 0.4, y: h - 120 },
-      { x: w * 0.8, y: h - 70 },
-      { x: w * 1.2, y: h - 50 },
-      { x: w * 1.6, y: h - 90 }
-    ];
-    for (let i = 0; i < points2.length; i++) {
-      const p = points2[i];
-      const nextP = points2[(i + 1) % points2.length];
-      ctx.quadraticCurveTo(off + p.x, p.y, off + (p.x + nextP.x) / 2, (p.y + nextP.y) / 2);
-    }
-    ctx.lineTo(off + w * 2, h);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
+  // Scale relative to a 640px reference height so hills stay
+  // proportionate on both short desktop canvases and tall mobile ones.
+  const s = h / 640;
 
-  drawTrees(ctx, w, h, off) {
-    ctx.save();
-    ctx.globalAlpha = 0.7;
-    const treePositions = [0.12, 0.28, 0.45, 0.62, 0.78, 0.92];
-    for (const pos of treePositions) {
-      const x = off + pos * w;
-      // TALLER trees: 55–85px range
-      const treeH = 55 + (pos * 31) % 30;
-      this._drawTree(ctx, x, h - this.groundHeight, treeH);
-    }
-    ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(off, h);
+  const points = [
+    { x: 0, y: h - 80 * s },
+    { x: w * 0.33, y: h - 40 * s },
+    { x: w * 0.66, y: h - 100 * s },
+    { x: w, y: h - 60 * s },
+    { x: w * 1.33, y: h - 90 * s },
+    { x: w * 1.66, y: h - 50 * s }
+  ];
+
+  ctx.moveTo(off, h);
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const nextP = points[(i + 1) % points.length];
+    ctx.quadraticCurveTo(off + p.x, p.y, off + (p.x + nextP.x) / 2, (p.y + nextP.y) / 2);
   }
+  ctx.lineTo(off + w * 2, h);
+  ctx.closePath();
+  ctx.fill();
+
+  // Second hill layer
+  ctx.fillStyle = '#66BB6A';
+  ctx.globalAlpha = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(off, h);
+  const points2 = [
+    { x: 0, y: h - 60 * s },
+    { x: w * 0.4, y: h - 120 * s },
+    { x: w * 0.8, y: h - 70 * s },
+    { x: w * 1.2, y: h - 50 * s },
+    { x: w * 1.6, y: h - 90 * s }
+  ];
+  for (let i = 0; i < points2.length; i++) {
+    const p = points2[i];
+    const nextP = points2[(i + 1) % points2.length];
+    ctx.quadraticCurveTo(off + p.x, p.y, off + (p.x + nextP.x) / 2, (p.y + nextP.y) / 2);
+  }
+  ctx.lineTo(off + w * 2, h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+ drawTrees(ctx, w, h, off) {
+  ctx.save();
+  ctx.globalAlpha = 0.7;
+  const treePositions = [0.12, 0.28, 0.45, 0.62, 0.78, 0.92];
+
+  // Same reference-height scaling as hills, plus an extra boost on
+  // mobile so trees read as clearly visible (per request: "longer" trees).
+  const s = h / 640;
+  const mobileBoost = this.isMobile ? 1.6 : 1.0;
+
+  for (const pos of treePositions) {
+    const x = off + pos * w;
+    const treeH = (55 + (pos * 31) % 30) * s * mobileBoost;
+    this._drawTree(ctx, x, h - this.groundHeight, treeH);
+  }
+  ctx.restore();
+}
 
   _drawTree(ctx, x, y, height) {
     // Thicker trunk
@@ -181,10 +189,11 @@ export class Background {
     ctx.fill();
   }
 
-  setMobileMode(isMobile) {
-    // Trees are now enabled on all devices including mobile
-    if (this.layers.length >= 2) {
-      this.layers[1].enabled = true;
-    }
+setMobileMode(isMobile) {
+  this.isMobile = isMobile;
+  // Trees are enabled on all devices including mobile
+  if (this.layers.length >= 2) {
+    this.layers[1].enabled = true;
   }
+}
 }
